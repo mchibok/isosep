@@ -1,0 +1,77 @@
+# script python pour faire "trous" dans isochrones
+
+# changer variable pour nom de couche/geojson - change variable for shape/geojson name
+nom_couche = "isochrone_2019-08-19T08_00_de_-73.49258559937294,45.51919069508378"
+
+
+from qgis.core import *
+# sélection valeurs de temps uniques (différentes entités)
+layer = QgsProject.instance().mapLayersByName(nom_couche)[0]
+# id de chaque rangée de la colonne time
+idx = layer.fields().indexOf("time")
+# valeurs ordonnées
+values = sorted(layer.uniqueValues(idx), reverse = True)
+layer.removeSelection()
+array = []
+# boucle du max >> min
+for i in range(len(values)):
+    array.append(str(values[i]))
+    #if i == 0:
+    if values[i] != layer.minimumValue(idx):
+        # sélection des entités inférieures à i
+        selection = "time<"+str(values[i])
+        expr = QgsFeatureRequest(QgsExpression(selection)).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([])
+        it = layer.getFeatures(QgsFeatureRequest(expr))
+        ids = [id.id() for id in it]
+        layer.selectByIds(ids)
+        # dissolve/regroupement les entités inférieures à i
+        param_diss = {
+            "INPUT": QgsProcessingFeatureSourceDefinition(nom_couche, True),
+            "OUTPUT": 'TEMPORARY_OUTPUT'}
+        algo_diss = processing.run("qgis:dissolve", param_diss)["OUTPUT"]
+        QgsProject.instance().addMapLayer(algo_diss)
+        # sélectionner i
+        selection = "time="+str(values[i])
+        expr = QgsFeatureRequest(QgsExpression(selection)).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([])
+        it = layer.getFeatures(QgsFeatureRequest(expr))
+        ids = [id.id() for id in it]
+        layer.selectByIds(ids)
+        # différence de l'entité i et des entités inférieures à i
+        params_diff = {
+            "INPUT": QgsProcessingFeatureSourceDefinition(nom_couche, True),
+            #"INPUT": "inf_i",
+            "OUTPUT": 'TEMPORARY_OUTPUT',
+            "OVERLAY": algo_diss.name()
+        }
+        algo_diff = processing.run("qgis:difference", params_diff)["OUTPUT"]
+        QgsProject.instance().removeMapLayer(algo_diss)
+        algo_diff.setName(str(values[i]))
+        QgsProject.instance().addMapLayer(algo_diff)
+        layer.removeSelection()
+    elif values[i] == layer.minimumValue(idx):
+        # isochrone + petit
+        selection = "time="+str(values[i])
+        expr = QgsFeatureRequest(QgsExpression(selection)).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([])
+        it = layer.getFeatures(QgsFeatureRequest(expr))
+        ids = [id.id() for id in it]
+        layer.selectByIds(ids)
+        # sauvegarder 900 en couche mémoire
+        min_iso = layer.materialize(QgsFeatureRequest().setFilterFids(layer.selectedFeatureIds()))
+        min_iso.setName(str(values[i]))
+        QgsProject.instance().addMapLayer(min_iso)
+        layer.removeSelection()
+
+# fusionner/merger couches
+params_fusion = {
+    "LAYERS": array,
+    "OUTPUT": "TEMPORARY_OUTPUT"
+    }
+algo_fusion = processing.run("qgis:mergevectorlayers", params_fusion)["OUTPUT"]
+algo_fusion.setName(nom_couche+"_séparé")
+QgsProject.instance().addMapLayer(algo_fusion)
+
+# enlever couches temporaires
+for i in range(len(values)):
+    temp = QgsProject.instance().mapLayersByName(str(values[i]))[0]
+    QgsProject.instance().removeMapLayer(temp)
+
