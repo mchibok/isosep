@@ -1,7 +1,9 @@
 
 # nom de la couche à séparer
-#nom_couche = "isochrone_2019-08-19T16_00_du_TLO_intervalles_5_max_60_marche_800"
-nom_couche = "test"
+nom_couche = "isochrone_2019-08-19T16_00_du_TLO_intervalles_5_max_60_marche_800"
+nom_couche = "isochrone_2019-08-19T08_00_de_-73.49258559937294,45.51919069508378"
+nom_couche = "geoj_to_shp"
+#nom_couche = "test"
 
 # importation des éléments de pyqgis
 from qgis.core import *
@@ -21,14 +23,17 @@ array = []
 # isochrone = i
 for i in range(len(values)):
 	# insère la valeur time en texte dans le vecteur array
-	#array.append(str(values[i]))
+	array.append(str(values[i]))
+	layer.removeSelection()
+	#print(str(values[i]))
 	# on fait les opérations suivantes seulement si ce n'est pas le plus petit isochrone
 	#if values[i] == 600:
-	#if i < 8:
 	#if values[i] != layer.minimumValue(idx) and values[i] != 1500:
-	if values[i] != layer.minimumValue(idx):
-		array.append(str(values[i]))
+	#if values[i] != layer.minimumValue(idx):
+	if i == 0:
+		#array.append(str(values[i]))
 		# sélection entités inférieures à isochrone i
+		print(str(values[i]))
 		selection = "time<"+str(values[i])
 		expr = QgsFeatureRequest(QgsExpression(selection)).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([])
 		it = layer.getFeatures(QgsFeatureRequest(expr))
@@ -37,7 +42,8 @@ for i in range(len(values)):
 		# dissolve/regroupement les entités inférieures à i
 		param_diss = {
 			"INPUT": QgsProcessingFeatureSourceDefinition(nom_couche, True),
-			"OUTPUT": 'TEMPORARY_OUTPUT'}
+			"OUTPUT": "TEMPORARY_OUTPUT"
+		}
 		algo_diss = processing.run("qgis:dissolve", param_diss)["OUTPUT"]
 		# ajout de la couche fusionnée algo_diss des entités inférieures à i
 		QgsProject.instance().addMapLayer(algo_diss)
@@ -64,7 +70,7 @@ for i in range(len(values)):
 		layer.removeSelection()
 	# si l'isochrone i est le plus petit
 	elif values[i] == layer.minimumValue(idx):
-		array.append(str(values[i]))
+		#array.append(str(values[i]))
 		# on le sélectionne
 		selection = "time="+str(values[i])
 		expr = QgsFeatureRequest(QgsExpression(selection)).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([])
