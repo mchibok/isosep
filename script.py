@@ -1,8 +1,24 @@
 
+validity checker
+Paramètres en entrée:
+{ 'ERROR_OUTPUT' : 'TEMPORARY_OUTPUT', 'IGNORE_RING_SELF_INTERSECTION' : False, 'INPUT_LAYER' : '/home/mik/repos/isosep/data_ex/iso_test.geojson', 'INVALID_OUTPUT' : 'TEMPORARY_OUTPUT', 'METHOD' : 2, 'VALID_OUTPUT' : 'TEMPORARY_OUTPUT' }
+
+Exécution terminée en 0.06 secondes
+Résultats:
+{'ERROR_COUNT': 4,
+'ERROR_OUTPUT': 'Erreur_de_sortie_aeafc38f_86df_4074_8a09_b547b81e0700',
+'INVALID_COUNT': 4,
+'INVALID_OUTPUT': 'Sortie_invalide_8436b97f_f544_4da6_98b0_198db4180da0',
+'VALID_COUNT': 8,
+'VALID_OUTPUT': 'Sortie_valide_ceec299c_08c0_4151_a588_4233ed86da23'}
+
+
+
+
 # nom de la couche à séparer
 nom_couche = "isochrone_2019-08-19T16_00_du_TLO_intervalles_5_max_60_marche_800"
 nom_couche = "isochrone_2019-08-19T08_00_de_-73.49258559937294,45.51919069508378"
-nom_couche = "geoj_to_shp"
+nom_couche = "iso_test"
 #nom_couche = "test"
 
 # importation des éléments de pyqgis
@@ -29,8 +45,7 @@ for i in range(len(values)):
 	# on fait les opérations suivantes seulement si ce n'est pas le plus petit isochrone
 	#if values[i] == 600:
 	#if values[i] != layer.minimumValue(idx) and values[i] != 1500:
-	#if values[i] != layer.minimumValue(idx):
-	if i == 0:
+	if values[i] != layer.minimumValue(idx):
 		#array.append(str(values[i]))
 		# sélection entités inférieures à isochrone i
 		print(str(values[i]))
