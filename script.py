@@ -1,31 +1,28 @@
 
-validity checker
-Paramètres en entrée:
-{ 'ERROR_OUTPUT' : 'TEMPORARY_OUTPUT', 'IGNORE_RING_SELF_INTERSECTION' : False, 'INPUT_LAYER' : '/home/mik/repos/isosep/data_ex/iso_test.geojson', 'INVALID_OUTPUT' : 'TEMPORARY_OUTPUT', 'METHOD' : 2, 'VALID_OUTPUT' : 'TEMPORARY_OUTPUT' }
-
-Exécution terminée en 0.06 secondes
-Résultats:
-{'ERROR_COUNT': 4,
-'ERROR_OUTPUT': 'Erreur_de_sortie_aeafc38f_86df_4074_8a09_b547b81e0700',
-'INVALID_COUNT': 4,
-'INVALID_OUTPUT': 'Sortie_invalide_8436b97f_f544_4da6_98b0_198db4180da0',
-'VALID_COUNT': 8,
-'VALID_OUTPUT': 'Sortie_valide_ceec299c_08c0_4151_a588_4233ed86da23'}
-
-
-
+# exécuter avec
+#exec(open("D:/outils_py/isosep/script.py".encode("UTF-8")).read())
 
 # nom de la couche à séparer
-nom_couche = "isochrone_2019-08-19T16_00_du_TLO_intervalles_5_max_60_marche_800"
-nom_couche = "isochrone_2019-08-19T08_00_de_-73.49258559937294,45.51919069508378"
-nom_couche = "iso_test"
-#nom_couche = "test"
+#nom_couche = "gts"
+
+#nom_couche = "isochrone_2019-08-19T16_00_du_TLO_intervalles_5_max_60_marche_800"
 
 # importation des éléments de pyqgis
 from qgis.core import *
+
+# nécessité de réparer les géométries du geojson
+param_rep = {
+	"INPUT" : nom_couche,
+	"OUTPUT" : "TEMPORARY_OUTPUT"
+}
+algo_rep = processing.run("qgis:fixgeometries", param_rep)["OUTPUT"]
+algo_rep.setName("rep")
+QgsProject.instance().addMapLayer(algo_rep)
+
 # 1. sélection valeurs de temps uniques (différentes entités)
 # 1.1 insère les entités dans la variable layer
-layer = QgsProject.instance().mapLayersByName(nom_couche)[0]
+#layer = QgsProject.instance().mapLayersByName(nom_couche)[0]
+layer = algo_rep
 # 1.2 index de la colonne time dans variable idx
 idx = layer.fields().indexOf("time")
 # 1.3 ordonner les valeurs du plus grand au plus petit
@@ -41,14 +38,10 @@ for i in range(len(values)):
 	# insère la valeur time en texte dans le vecteur array
 	array.append(str(values[i]))
 	layer.removeSelection()
-	#print(str(values[i]))
+	print(str(values[i]))
 	# on fait les opérations suivantes seulement si ce n'est pas le plus petit isochrone
-	#if values[i] == 600:
-	#if values[i] != layer.minimumValue(idx) and values[i] != 1500:
 	if values[i] != layer.minimumValue(idx):
-		#array.append(str(values[i]))
 		# sélection entités inférieures à isochrone i
-		print(str(values[i]))
 		selection = "time<"+str(values[i])
 		expr = QgsFeatureRequest(QgsExpression(selection)).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([])
 		it = layer.getFeatures(QgsFeatureRequest(expr))
@@ -56,7 +49,7 @@ for i in range(len(values)):
 		layer.selectByIds(ids)
 		# dissolve/regroupement les entités inférieures à i
 		param_diss = {
-			"INPUT": QgsProcessingFeatureSourceDefinition(nom_couche, True),
+			"INPUT": QgsProcessingFeatureSourceDefinition(algo_rep.name(), True),
 			"OUTPUT": "TEMPORARY_OUTPUT"
 		}
 		algo_diss = processing.run("qgis:dissolve", param_diss)["OUTPUT"]
@@ -70,7 +63,7 @@ for i in range(len(values)):
 		layer.selectByIds(ids)
 		# différence de l'entité i et des entités inférieures à i (algo_diss)
 		params_diff = {
-			"INPUT": QgsProcessingFeatureSourceDefinition(nom_couche, True),
+			"INPUT": QgsProcessingFeatureSourceDefinition(algo_rep.name(), True),
 			"OUTPUT": "TEMPORARY_OUTPUT",
 			"OVERLAY": algo_diss.name()
 		}
@@ -85,7 +78,6 @@ for i in range(len(values)):
 		layer.removeSelection()
 	# si l'isochrone i est le plus petit
 	elif values[i] == layer.minimumValue(idx):
-		#array.append(str(values[i]))
 		# on le sélectionne
 		selection = "time="+str(values[i])
 		expr = QgsFeatureRequest(QgsExpression(selection)).setFlags(QgsFeatureRequest.NoGeometry).setSubsetOfAttributes([])
@@ -111,7 +103,7 @@ algo_fusion = processing.run("qgis:mergevectorlayers", params_fusion)["OUTPUT"]
 algo_fusion.setName(nom_couche+"_séparé")
 # 3.2 ajoute la couche au canevas
 QgsProject.instance().addMapLayer(algo_fusion)
-
+QgsProject.instance().removeMapLayer(algo_rep)
 # 4 ôte les couches temporaires
 for i in range(len(values)):
 	temp = QgsProject.instance().mapLayersByName(str(values[i]))[0]
