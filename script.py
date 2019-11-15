@@ -94,15 +94,20 @@ for i in range(len(values)):
 		layer.removeSelection()
 
 # 3. fusion (merge) de toutes les couches distinctes des différents temps
+chemin = os.path.dirname(unicode(layer.dataProvider().dataSourceUri()))+"/"+nom_couche+"_separe.shp"
 params_fusion = {
 	"LAYERS": array,
-	"OUTPUT": "TEMPORARY_OUTPUT"
+	"OUTPUT": chemin
+	#"OUTPUT": "TEMPORARY_OUTPUT"
 }
 algo_fusion = processing.run("qgis:mergevectorlayers", params_fusion)["OUTPUT"]
 # 3.1 nomme la couche comme l'entrante en ajoutant '_séparé'
-algo_fusion.setName(nom_couche+"_séparé")
+#algo_fusion.setName(nom_couche+"_séparé")
 # 3.2 ajoute la couche au canevas
 QgsProject.instance().addMapLayer(algo_fusion)
+#QgsVectorFileWriter.writeAsVectorFormat(layer,r"C:/Users/myName/xx/hoppla.shp","utf-8",None,"ESRI Shapefile")
+#_writer = QgsVectorFileWriter.writeAsVectorFormat(layer,chemin,'utf-8',driverName='ESRI Shapefile')
+
 QgsProject.instance().removeMapLayer(algo_rep)
 # 4 ôte les couches temporaires
 for i in range(len(values)):
