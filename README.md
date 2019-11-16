@@ -1,14 +1,11 @@
 # isosep
-> Script PYTHON pour créer des entités distinctes dans QGIS à partir d'isochrones provenant d'OTP
+> script python pour créer des entités distinctes dans QGIS à partir d'isochrones provenant d'OTP
 
-## utilisation
-- Afficher couche à séparer dans QGIS (geojson ou shapefile)
-- Ouvrir *script.py*
-    - Mettre le nom de couche à séparer
-    - exemple: `nom_couche = "isochrone_2019-08-19T08_00"`
-    - Copier l'ensemble du script (`ctrl`+`a`, `ctrl`+`c`)
-- Ouvrir console python dans QGIS
-    - Extension >> console python
-- Coller le script copié dans la console python (`ctrl`+`v`)
-    - Appuyer `enter` deux fois
-- Couche générée est en mémoire >> **ne pas oublier de sauvegarder**
+## exécution dans QGIS
+1. afficher couche/geojson à séparer
+2. ouvrir console python dans QGIS
+    - extension >> console python
+3. inscrire nom de la couche à séparer dans console
+    - exemple: `nom_couche = "isochrone_2019-08-19T08_00_de_-73.49258559937294,45.51919069508378"`
+4. exécuter le script dans la console en substituant le nom du répertoire où il est situé
+    - `exec(open("D:/DOSSIER/script.py".encode("UTF-8")).read())`

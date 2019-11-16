@@ -1,10 +1,9 @@
 
 # exécuter avec
 #exec(open("D:/outils_py/isosep/script.py".encode("UTF-8")).read())
+#exec(open("/home/mik/repos/isosep/script.py").read())
 
 # nom de la couche à séparer
-#nom_couche = "gts"
-
 #nom_couche = "isochrone_2019-08-19T16_00_du_TLO_intervalles_5_max_60_marche_800"
 
 # importation des éléments de pyqgis
@@ -20,16 +19,14 @@ algo_rep.setName("rep")
 QgsProject.instance().addMapLayer(algo_rep)
 
 # 1. sélection valeurs de temps uniques (différentes entités)
-# 1.1 insère les entités dans la variable layer
-#layer = QgsProject.instance().mapLayersByName(nom_couche)[0]
 layer = algo_rep
-# 1.2 index de la colonne time dans variable idx
+# 1.1 index de la colonne time dans variable idx
 idx = layer.fields().indexOf("time")
-# 1.3 ordonner les valeurs du plus grand au plus petit
+# 1.2 ordonner les valeurs du plus grand au plus petit
 values = sorted(layer.uniqueValues(idx), reverse = True)
-# 1.4 déselectionner tout
+# 1.3 déselectionner tout
 layer.removeSelection()
-# 1.5 initialiser le vecteur array vide qui sert à mettre chaque valeur de time en texte
+# 1.4 initialiser le vecteur array vide qui sert à mettre chaque valeur de time en texte
 array = []
 
 # 2. initialisation de la boucle de la plus grosse valeur à la plus petite
@@ -94,21 +91,20 @@ for i in range(len(values)):
 		layer.removeSelection()
 
 # 3. fusion (merge) de toutes les couches distinctes des différents temps
-chemin = os.path.dirname(unicode(layer.dataProvider().dataSourceUri()))+"/"+nom_couche+"_separe.shp"
+# 3.1 répertoire de la couche originale
+layer_orig = QgsProject.instance().mapLayersByName(nom_couche)[0]
+chemin = os.path.dirname(unicode(layer_orig.dataProvider().dataSourceUri()))+"/"+nom_couche+"_separe.shp"
 params_fusion = {
 	"LAYERS": array,
 	"OUTPUT": chemin
 	#"OUTPUT": "TEMPORARY_OUTPUT"
 }
 algo_fusion = processing.run("qgis:mergevectorlayers", params_fusion)["OUTPUT"]
-# 3.1 nomme la couche comme l'entrante en ajoutant '_séparé'
-#algo_fusion.setName(nom_couche+"_séparé")
 # 3.2 ajoute la couche au canevas
-QgsProject.instance().addMapLayer(algo_fusion)
-#QgsVectorFileWriter.writeAsVectorFormat(layer,r"C:/Users/myName/xx/hoppla.shp","utf-8",None,"ESRI Shapefile")
-#_writer = QgsVectorFileWriter.writeAsVectorFormat(layer,chemin,'utf-8',driverName='ESRI Shapefile')
-
+layer_sep = QgsVectorLayer(chemin, nom_couche+"_séparé") 
+QgsProject.instance().addMapLayer(layer_sep)
 QgsProject.instance().removeMapLayer(algo_rep)
+
 # 4 ôte les couches temporaires
 for i in range(len(values)):
 	temp = QgsProject.instance().mapLayersByName(str(values[i]))[0]
